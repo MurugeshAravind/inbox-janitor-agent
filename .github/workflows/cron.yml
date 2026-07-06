@@ -4,7 +4,7 @@ name: Scheduled Inbox Janitor Run
 on:
   schedule:
     # Runs at 00:00 UTC (5:30 AM IST) every Monday morning
-    - cron: '0 0 * * 1'
+    - cron: "0 0 * * 1"
   workflow_dispatch: # Enables the "Run workflow" button manually in GitHub
 
 jobs:
@@ -20,15 +20,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
-      # Step 3: Hydrate our ignored files using GitHub Secrets
+      # Step 3: Hydrate our ignored files using GitHub Secrets securely
       - name: Inject Environment and Token Secrets
+        env:
+          ENV_CONTENT: ${{ secrets.ENV_FILE }}
+          CREDENTIALS_CONTENT: ${{ secrets.CREDENTIALS_JSON }}
+          TOKEN_CONTENT: ${{ secrets.TOKEN_JSON }}
         run: |
-          echo "${{ secrets.ENV_FILE }}" > .env
-          echo "${{ secrets.CREDENTIALS_JSON }}" > credentials.json
-          echo "${{ secrets.TOKEN_JSON }}" > token.json
+          echo "$ENV_CONTENT" > .env
+          echo "$CREDENTIALS_CONTENT" > credentials.json
+          echo "$TOKEN_CONTENT" > token.json
 
       # Step 4: Install your exact production and development dependencies
       - name: Install Dependencies
