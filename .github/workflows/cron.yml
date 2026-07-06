@@ -1,0 +1,39 @@
+name: Scheduled Inbox Janitor Run
+
+# 1. Trigger the script on a schedule AND allow manual triggers from the UI
+on:
+  schedule:
+    # Runs at 00:00 UTC (5:30 AM IST) every Monday morning
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Enables the "Run workflow" button manually in GitHub
+
+jobs:
+  janitor-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Clone the code repository into the runner
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Boot up a clean, reliable Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      # Step 3: Hydrate our ignored files using GitHub Secrets
+      - name: Inject Environment and Token Secrets
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          echo "${{ secrets.CREDENTIALS_JSON }}" > credentials.json
+          echo "${{ secrets.TOKEN_JSON }}" > token.json
+
+      # Step 4: Install your exact production and development dependencies
+      - name: Install Dependencies
+        run: npm ci
+
+      # Step 5: Execute the janitor script!
+      - name: Run Inbox Janitor
+        run: npm run dev
