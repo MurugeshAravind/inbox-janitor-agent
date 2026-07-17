@@ -86,6 +86,15 @@ async function executeInboxJanitor() {
     console.log("🏁 Janitor operations cycle complete.");
 
   } catch (error) {
+    const err = error as any;
+    if (err?.response?.data?.error === "invalid_grant" || err?.message?.includes("invalid_grant")) {
+      console.error(
+        "\n❌ Gmail refresh token is expired or revoked.\n" +
+        "Please run 'npx tsx scripts/generate-refresh-token.ts' locally to mint a new refresh token,\n" +
+        "and update GMAIL_REFRESH_TOKEN (and/or TOKEN_JSON) in GitHub Actions / your environment.\n"
+      );
+      process.exit(1);
+    }
     console.error("❌ Critical failure during dynamic operations cycle:", error);
   }
 }

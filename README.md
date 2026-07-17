@@ -116,6 +116,22 @@ const DRY_RUN = false;
 
 To modify which emails are classified for deletion, update the `systemInstructions` text in `src/index.ts` to add or remove domains.
 
+### 5. Gmail Authentication & Refresh Token Rotation (CI/CD)
+
+To run the Inbox Janitor non-interactively in GitHub Actions:
+1. **Initial Authentication & Token Generation**:
+   Run the local token generation utility to mint a refresh token:
+   ```bash
+   npx tsx scripts/generate-refresh-token.ts
+   ```
+   Follow the link printed to your terminal to authorize the application. Once authorized, the console will print the new `GMAIL_REFRESH_TOKEN` and the raw `TOKEN_JSON` content, and write it to `token.json` locally.
+
+2. **Google Cloud Consent Screen Configuration**:
+   To prevent your refresh token from expiring after 7 days, ensure your **OAuth consent screen** publishing status is set to **In production** (or published) in the Google Cloud Console. If it remains in **Testing**, Google will automatically expire the refresh token every 7 days, causing GitHub Actions to fail.
+
+3. **Update GitHub Secrets**:
+   If the token expires or is revoked (failing with `invalid_grant`), regenerate it locally using the steps above and update `TOKEN_JSON` (containing the complete credentials structure) under Settings → Secrets and variables → Actions.
+
 ---
 
 ## 🧪 Labs Experiment Context
