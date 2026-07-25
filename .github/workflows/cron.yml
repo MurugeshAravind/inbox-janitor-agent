@@ -23,13 +23,12 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      # Step 3: Securely decode and write credentials.json using Base64
-      - name: Create credentials.json from Base64 Secret
-        uses: timheuer/base64-to-file@v1.2
-        with:
-          fileName: 'credentials.json'
-          fileDir: './'
-          encodedString: ${{ secrets.CREDENTIALS_JSON }}
+      # Step 3: Inject credentials secret
+      - name: Inject Credentials Secret
+        env:
+          CREDENTIALS_CONTENT: ${{ secrets.CREDENTIALS_JSON }}
+        run: |
+          echo "$CREDENTIALS_CONTENT" > credentials.json
 
       # Step 4: Hydrate remaining environment and runtime token files
       - name: Inject Environment and Token Secrets
