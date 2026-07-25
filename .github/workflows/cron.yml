@@ -28,7 +28,9 @@ jobs:
         env:
           CREDENTIALS_CONTENT: ${{ secrets.CREDENTIALS_JSON }}
         run: |
-          echo "$CREDENTIALS_CONTENT" > credentials.json
+          if [ -n "$CREDENTIALS_CONTENT" ]; then
+            echo "$CREDENTIALS_CONTENT" > credentials.json
+          fi
 
       # Step 4: Hydrate remaining environment and runtime token files
       - name: Inject Environment and Token Secrets
@@ -36,8 +38,12 @@ jobs:
           ENV_CONTENT: ${{ secrets.ENV_FILE }}
           TOKEN_CONTENT: ${{ secrets.TOKEN_JSON }}
         run: |
-          echo "$ENV_CONTENT" > .env
-          echo "$TOKEN_CONTENT" > token.json
+          if [ -n "$ENV_CONTENT" ]; then
+            echo "$ENV_CONTENT" > .env
+          fi
+          if [ -n "$TOKEN_CONTENT" ]; then
+            echo "$TOKEN_CONTENT" > token.json
+          fi
 
       # Step 5: Install your exact production and development dependencies
       - name: Install Dependencies

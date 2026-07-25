@@ -19,6 +19,13 @@ const structuredAnalyst = model.withStructuredOutput(ClassificationSchema);
 
 async function executeInboxJanitor() {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error(
+        "❌ GEMINI_API_KEY is missing from environment.\n" +
+        "Please ensure GEMINI_API_KEY is set in your .env file or GitHub Secrets."
+      );
+    }
+
     console.log("⚡ Initializing Live Inbox Janitor Operations...");
     const gmail = await getGmailClient();
 

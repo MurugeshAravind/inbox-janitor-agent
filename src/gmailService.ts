@@ -90,7 +90,16 @@ export async function getGmailClient() {
     return google.gmail({ version: "v1", auth: oauth2Client });
     
   } catch (err) {
-    // 3. If token.json doesn't exist, trigger the one-time interactive login
+    // 3. If token.json doesn't exist or is invalid
+    if (process.env.CI || process.env.GITHUB_ACTIONS) {
+      throw new Error(
+        "❌ No valid cached token found in CI environment (GitHub Actions).\n" +
+        "Interactive browser login cannot be performed in a headless CI environment.\n" +
+        "Please generate a token locally using 'npx tsx scripts/generate-refresh-token.ts' " +
+        "and paste the token into your GitHub Secrets as TOKEN_JSON."
+      );
+    }
+
     console.log("No valid cached token found. Starting interactive OAuth flow...");
     
     const localAuthClient = await authenticate({
