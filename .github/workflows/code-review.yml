@@ -1,0 +1,52 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+concurrency:
+  group: code-review-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install OpenCodeReview
+        run: npm install -g @alibaba-group/open-code-review
+
+      - name: Configure OCR Provider
+        env:
+          OCR_LLM_KEY: ${{ secrets.OCR_LLM_KEY }}
+        run: |
+          ocr config provider openai-compatible \
+            --base-url "${OCR_LLM_BASE_URL:-https://api.openai.com/v1}" \
+            --api-key "$OCR_LLM_KEY" \
+            --model "${OCR_LLM_MODEL:-gpt-4o-mini}"
+
+      - name: Run OCR Review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          ocr review \
+            --from "origin/${BASE_REF}" \
+            --to "HEAD" \
+            --audience agent \
+            --format github
