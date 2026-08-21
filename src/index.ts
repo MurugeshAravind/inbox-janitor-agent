@@ -1,13 +1,13 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import * as dotenv from "dotenv";
-import { ClassificationSchema } from "./agents.js";
+import { ClassificationSchema, TARGET_DOMAINS, senderMatchesTargetDomain } from "./agents.js";
 import { getGmailClient } from "./gmailService.js";
 import { fetchUnreadEmails, moveEmailToTrash } from "./gmailActions.js";
 
 dotenv.config();
 
 // SAFETY TOGGLE: Set to false only when you are ready to let the AI actually delete emails!
-const DRY_RUN = false; 
+const DRY_RUN = false;
 
 const model = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash",
@@ -43,15 +43,9 @@ async function executeInboxJanitor() {
       You are a defensive Enterprise Inbox Janitor Agent. Your single task is to classify emails for automated purging.
       
       CRITICAL MATCHING RULES:
-      Set 'shouldDelete' to true if the sender string contains ANY of the following target domains:
-      1. 'bankbazaar.com' (Promotional loan offers/credit alerts)
-      2. 'monsterindia.com' or 'timesjobs.com' (Aggressive automated job aggregators)
-      3. 'github.com' (Support notifications and alert mailers)
-      4. 'linkedin.com' (Automated job alert updates)
-      5. 'producthunt.com' or 'substack.com' or 'quora.com' (Weekly/Daily digest newsletters)
-      6. 'freeletics.com' (Fitness marketing and guides)
-      7. 'groww.in' (Generic financial digests)
-      8. 'actcorp.in' or 'in4.actcorp.in' (ISP promotional marketing/offers)
+      Set 'shouldDelete' to true only when the sender's email domain is exactly one
+      of these domains or a subdomain of one of them:
+      ${TARGET_DOMAINS.map((domain, index) => `${index + 1}. '${domain}'`).join("\n      ")}
       
       SAFEGUARD RULES:
       - For ANY other sender domain not explicitly listed above, you MUST set shouldDelete to false.
@@ -74,10 +68,14 @@ async function executeInboxJanitor() {
         { role: "user", content: userContext }
       ]);
 
-      console.log(`   -> AI Decision: ${analysis.shouldDelete ? "❌ PURGE" : "✅ KEEP"}`);
+      // The model may explain a decision, but it cannot expand the deletion allowlist.
+      const isAllowedSender = senderMatchesTargetDomain(email.sender);
+      const shouldDelete = isAllowedSender && analysis.shouldDelete;
+
+      console.log(`   -> Final Decision: ${shouldDelete ? "❌ PURGE" : "✅ KEEP"}`);
       console.log(`   -> Reason:      "${analysis.reasoning}"`);
 
-      if (analysis.shouldDelete) {
+      if (shouldDelete) {
         if (DRY_RUN) {
           console.log(`   ⚠️ [DRY RUN ACTIVE] Would have moved message ${email.id} to trash.\n`);
         } else {

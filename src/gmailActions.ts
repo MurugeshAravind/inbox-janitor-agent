@@ -8,15 +8,16 @@ export async function fetchUnreadEmails(gmail: gmail_v1.Gmail): Promise<EmailMes
   const listResponse = await gmail.users.messages.list({
     userId: "me",
     q: "is:unread",
-    maxResults: 15 
+    maxResults: 50
   });
 
-  const messagesSummary = listResponse.data.messages || [];
-  const detailedEmails: EmailMessage[] = [];
+  const messagesSummary = (listResponse.data.messages || []).filter(
+    (message): message is typeof message & { id: string } => Boolean(message.id),
+  );
 
-  for (const msg of messagesSummary) {
-    if (!msg.id) continue;
-    
+  // These requests are independent. Fetching them together avoids waiting for
+  // one network round trip to finish before starting the next one.
+  return Promise.all(messagesSummary.map(async (msg): Promise<EmailMessage> => {
     // Configured with 'metadata' format and explicit header selectors
     const detailResponse = await gmail.users.messages.get({
       userId: "me",
@@ -30,21 +31,19 @@ export async function fetchUnreadEmails(gmail: gmail_v1.Gmail): Promise<EmailMes
     const subject = headers.find(h => h.name?.toLowerCase() === "subject")?.value || "No Subject";
     const snippet = detailResponse.data.snippet || "";
 
-    detailedEmails.push({
+    return {
       id: msg.id,
       sender,
       subject,
       snippet
-    });
-  }
-
-  return detailedEmails;
+    };
+  }));
 }
 
 /**
  * Physically moves a target message ID directly to the Gmail Trash bin.
  */
-export async function moveEmailToTrash(gmail: gmail_v1.Gmail, messageId: string) {
+export async function moveEmailToTrash(gmail: gmail_v1.Gmail, messageId: string): Promise<void> {
   await gmail.users.messages.trash({
     userId: "me",
     id: messageId

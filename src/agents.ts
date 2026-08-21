@@ -1,5 +1,35 @@
 import { z } from "zod";
 
+/**
+ * Only these domains are eligible for deletion. Keep this list small and explicit:
+ * it is the final safety boundary, independent of the model's response.
+ */
+export const TARGET_DOMAINS = [
+  "bankbazaar.com",
+  "monsterindia.com",
+  "timesjobs.com",
+  "github.com",
+  "linkedin.com",
+  "producthunt.com",
+  "substack.com",
+  "quora.com",
+  "freeletics.com",
+  "groww.in",
+  "actcorp.in",
+  "grammarly.com"
+] as const;
+
+export function senderMatchesTargetDomain(sender: string): boolean {
+  const address = sender.match(/<([^>]+)>/)?.[1] ?? sender;
+  const domain = address.split("@")[1]?.trim().toLowerCase();
+
+  if (!domain) return false;
+
+  return TARGET_DOMAINS.some(
+    (target) => domain === target || domain.endsWith(`.${target}`),
+  );
+}
+
 // 1. Define the structural contract we expect back from the AI
 export const ClassificationSchema = z.object({
   shouldDelete: z.boolean().describe("True if the email matches the spam/unwanted criteria, false otherwise."),

@@ -107,14 +107,14 @@ npm run dev
 
 ### 4. Safety Lock & Custom Classification Rules
 
-Before deploying or running on a large mailbox, review the `DRY_RUN` setting in [src/index.ts](file:///E:/Project/inbox-janitor-agent/src/index.ts#L9-L10):
+Before deploying or running on a large mailbox, review the `DRY_RUN` setting in [src/index.ts](file:///E:/Project/inbox-janitor-agent/src/index.ts):
 
 ```typescript
-// SAFETY TOGGLE: Set to false only when you are ready to let the AI actually delete emails!
-const DRY_RUN = false; 
+// SAFETY TOGGLE: Set to false only when you are ready to let the agent move emails to Trash.
+const DRY_RUN = true;
 ```
 
-To modify which emails are classified for deletion, update the `systemInstructions` text in `src/index.ts` to add or remove domains.
+To modify which emails are eligible for deletion, update `TARGET_DOMAINS` in `src/agents.ts`. The model cannot override this allowlist.
 
 ### 5. Gmail Authentication & Refresh Token Rotation (CI/CD)
 

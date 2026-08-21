@@ -10,6 +10,7 @@ on:
 jobs:
   janitor-run:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       # Step 1: Clone the code repository into the runner
@@ -29,7 +30,7 @@ jobs:
           CREDENTIALS_CONTENT: ${{ secrets.CREDENTIALS_JSON }}
         run: |
           if [ -n "$CREDENTIALS_CONTENT" ]; then
-            echo "$CREDENTIALS_CONTENT" > credentials.json
+            printf '%s' "$CREDENTIALS_CONTENT" > credentials.json
           fi
 
       # Step 4: Hydrate remaining environment and runtime token files
@@ -39,10 +40,10 @@ jobs:
           TOKEN_CONTENT: ${{ secrets.TOKEN_JSON }}
         run: |
           if [ -n "$ENV_CONTENT" ]; then
-            echo "$ENV_CONTENT" > .env
+            printf '%s' "$ENV_CONTENT" > .env
           fi
           if [ -n "$TOKEN_CONTENT" ]; then
-            echo "$TOKEN_CONTENT" > token.json
+            printf '%s' "$TOKEN_CONTENT" > token.json
           fi
 
       # Step 5: Install your exact production and development dependencies
